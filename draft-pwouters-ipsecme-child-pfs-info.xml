@@ -4,10 +4,11 @@
 <!ENTITY RFC4034 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.4034.xml">
 <!ENTITY RFC5890 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.5890.xml">
 <!ENTITY RFC6698 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.6698.xml">
-<!ENTITY RFC6982 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.6982.xml">
+<!-- <!ENTITY RFC6982 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.6982.xml"> -->
 <!ENTITY RFC7296 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.7296.xml">
 <!ENTITY RFC8174 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8174.xml">
 <!ENTITY RFC7942 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.7942.xml">
+<!ENTITY RFC6023 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.6023.xml">
 ]>
 <?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
 <?rfc strict="yes" ?>
@@ -17,9 +18,9 @@
 <?rfc sortrefs="yes" ?>
 <?rfc compact="yes" ?>
 <?rfc subcompact="no" ?>
-<rfc ipr="trust200902" updates="" obsoletes="" category="std" docName="draft-pwouters-ipsecme-child-pfs-info-01">
+<rfc ipr="trust200902" updates="" obsoletes="" category="std" docName="draft-pwouters-ipsecme-child-pfs-info-02">
   <front>
-    <title>IKEv2 support for Child SA PFS policy notification</title>
+    <title abbrev="Child SA PFS Policy Info">IKEv2 Support for Child SA PFS Policy Information</title>
     <author initials="P." surname="Wouters" fullname="Paul Wouters">
       <organization>Aiven</organization>
       <address>
@@ -39,92 +40,108 @@
     <keyword>IPsec</keyword>
     <abstract>
       <t>
-       This document defines the CHILD_PFS_INFO Notify Message Status Type Payload
-       for the Internet Key Exchange Protocol Version 2 (IKEv2) to support exchanging
-       the policy settings for the Perfect Forward Secrecy (PFS) and which Key Exchange
-       (KE) method(s) setting of the initial Child SA that are expected to be used during
-       Child SA rekey.
+       This document defines an extension for the Internet Key Exchange Protocol Version 2 (IKEv2) to support negotiation
+       at the time of initial Child Security Association (SA) establishing of Key Exchange (KE) method that could be used in subsequent
+       rekeys of this SA.
       </t>
     </abstract>
   </front>
   <middle>
     <section title="Introduction">
       <t>
-       The IKEv2 <xref target="RFC7296"/> protocol uses the Keying Exchange (KE)
-       payload, formerly known as the Diffie-Hellman Group Transform payload
-       to create an ephemeral IKE connection. During an IKE rekey, a new KE payload
-       is used to create a new ephemeral IKE connection, resulting in Perfect
+       The IKEv2 <xref target="RFC7296"/> protocol uses the Key Exchange (KE) payload
+       to perform an ephemeral key exchange. During an IKEv2 rekey operations, a new KE payload
+       is used to create a new ephemeral key, resulting in Perfect
        Forward Secrecy (PFS).</t>
       <t>
-       A Child SA optionally uses its own PFS settings by including its own KE
-       payload and list of acceptable Keying Exchange methods. During Child SA
-       rekeys, KE payloads of acceptable Keying Exchange methods are exchanged to
+       A Child Security Association (SA) optionally uses its own PFS settings by including its own KE
+       payload and list of acceptable Key Exchange methods. During Child SA
+       rekeys, KE payloads of acceptable Key Exchange methods are exchanged to
        create PFS.</t>
-      <t>The Initial Exchanges establish both an IKE SA and a Child SA using the
-       Keying Exchange method negotiated for the IKE SA. Thus, after the Initial
-       Exchange, the peers are not aware of each others PFS requirements for the
+      <t>The Initial exchanges establish both an IKE SA and a Child SA using the
+       Key Exchange method negotiated for the IKE SA. Thus, after the Initial
+       exchanges, the peers are not aware of each other PFS requirements for the
        existing Child SA. It is common practise to either not perform PFS for Child SAs,
        or to only perform the same KE methods for both the IKE SA and all Child SAs.
        The situation is even more complex when Post-Quantum Key Exchange methods
-       are used htat might contain multiple KE payloads, which might not all be
+       are used that might contain multiple KE payloads, which might not all be
        desired for rekeying the Initial Child SA.  It is currently not possible
        to know the desired PFS configuration for rekey of the initial Child SA.
        The peers find out about this problem only at the first Child SA rekey,
-       which is typically 1 to 8 hours later. </t>
+       which can be substantially (several hours) later than initial Child Sa is created. </t>
       <t>
-       This document introduces the CHILD_PFS_INFO Notify payload to exchange
-       this information during the estaliblisment of the initial Child SA.</t> 
+       This document defines a method for peers to negotiate a Key Exchange method
+       that is compliant with peers' Child SA PFS policy at the time 
+       an initial Child SA is being established.</t> 
 
-      <section title="Requirements Language">
-        <t>
-       The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
-       "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
-       "OPTIONAL" in this document are to be interpreted as described in BCP
-       14 <xref target="RFC2119"/> <xref target="RFC8174"/> when, and only
-       when, they appear in all capitals, as shown here.
-      </t>
+      <section title="Terminology and Notation">
+          <t> The key words "<bcp14>MUST</bcp14>", "<bcp14>MUST NOT</bcp14>", "<bcp14>REQUIRED</bcp14>", "<bcp14>SHALL</bcp14>", "<bcp14>SHALL NOT</bcp14>", "<bcp14>SHOULD</bcp14>", "<bcp14>SHOULD NOT</bcp14>", 
+          "<bcp14>RECOMMENDED</bcp14>", "<bcp14>NOT RECOMMENDED</bcp14>", "<bcp14>MAY</bcp14>", and "<bcp14>OPTIONAL</bcp14>" in this document are to be interpreted 
+          as described in BCP 14 <xref target="RFC2119" /> <xref target="RFC8174" /> when, and only when, 
+          they appear in all capitals, as shown here.</t>
+
+          <t> The document uses a term "initial Child SA" to refer to a Child SA created in the IKE_AUTH exchange.
+          A Child SA created in the CREATE_CHILD_SA exchange cannot be considered as "initial Child SA" even if it is the 
+          first ever Child SA created in the IKE SA (e.g., in case of childless IKE SA <xref target="RFC6023" />).
+          </t>
       </section>
-    <section title="Payload Format" anchor="payload_formats">
+
+<!--
+      <section title="Payload Format" anchor="payload_formats">
       <t>
       All multi-octet fields representing integers are laid out in big
       endian order (also known as "most significant byte first", or
       "network byte order").
      </t>
-    </section>
-    </section>
-      <section title="CHILD_PFS_INFO Notify Status Message Payload" anchor="child_pfs_notify_payload">
-        <figure align="center">
-          <artwork align="left"><![CDATA[
-                    1                   2                   3
-0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-----------------------------+-------------------------------+
-! Next Payload  !C!  RESERVED   !         Payload Length        !
-+---------------+---------------+-------------------------------+
-!  Protocol ID  !   SPI Size    !      Notify Message Type      !
-+---------------+---------------+-------------------------------+
-! Transform Type| REQUIRED?     | Child Key Exchange Method     |
-+---------------+-----------------------------------------------+
-~               :               :                               ~
-+-------------------------------+-------------------------------+
-            ]]></artwork>
-        </figure>
-        <t>
-          <list style="symbols">
-            <t>The Critical Flag (C) MUST NOT be set.</t>
-            <t>Protocol ID (1 octet) - MUST be 0. MUST be ignored if not 0.</t>
-            <t>SPI Size (1 octet) - MUST be 0. MUST be ignored if not 0.</t>
-            <t>Notify Status Message Type (2 octets) - set to [TBD1]</t>
-            <t>list of one or more Child Key Exchange Methods</t>
-          </list>
-        </t>
-      <t>Each allowed or mandatory Child Key Exchange Method, and its Transform
-         Type for which it is valid. These differ based on the Key Exchange it
-         is used in. </t>
-      <t>Each entry is four octets. If the KE list payload is a not a multiple of
-         four, the entire payload MUST be ignored.</t>
-      <t> The REQUIRED fields contains 0 for ALLOWED and 1 for MANDATORY.</t>
       </section>
+-->
 
+    </section>
+
+    <section title="Protocol Overview" anchor="overview">
+        <t> In IKEv2, when an IKE SA is created, an initial Child SA is also created as described in <xref target="RFC7296" />.
+        Negotiation of the Child Sa parameters for the initial Child SA is different than for any other Child Sa.
+        In particular, since the IKE_AUTH exchange does not contain Key Exchange (KE) payloads, key exchnage 
+        method for initial Child SA cannot be negotiated. Section 1.2 of <xref target="RFC7296" /> states 
+        that the SA payloads in the IKE_AUTH exchange cannot contain Transform Type 4 (Key Exchange Method) 
+        with any value other than NONE (and that <xref target="RFC7296" /> recommends implementations to omit 
+        the whole transform substructure if its Transform ID is NONE). This is the only difference in the negotiation
+        of Child SA parameters between the IKE_AUTH (for initial Child SA) and the CREATE_CHILD_SA (for all other Child SA) exchanges.
+        </t>
+
+        <t> In order to allow peers to negotiate the Key Exchnage method for use in successive rekey operations
+        during initial IKE exchanges, this document allows supporting peers to negotiate key exchnage 
+        method in the IKE_AUTH exchange as they would do it in the CREATE_CHILD_SA exchange. Note, that 
+        this negotiation does not affect the way session keys are derived for an initial Child SA and is only
+        purposed for agreeing on the mutually acceptable key exchange method for successive rekey of initial Child SA. 
+        </t>
+    </section>
+
+    <section title="Protocol Details" anchor="protocol">
+        <t> To be able to use this extensions peers first need to negotiate support for it.
+        This is done in the IKE_SA_INIT exchange by exchanging new notification CHILD_PFS_INFO (&lt;TBA&gt;).
+        The Protocol ID and SPI Size fields of this notification are set to 0, the Notification Data is empty.
+        The initiator wishing to use this extension includes this notification in the IKE_SA_INIT request.
+        If the responder receives the CHILD_PFS_INFO and supports this extension, it sends this notification back in the response.
+        </t>
+
+        <t> If peers successfully exchanged the CHILD_PFS_INFO notification in the IKE_SA_INIT exchange
+        then the initiator <bcp14>MAY</bcp14> (but not obliged) to include the Key Exchange Method (KE) transform(s)
+        that it is wishing to use for subsequent rekey operations in the SA payload in the IKE_AUTH exchnage.
+        If this case the responder <bcp14>MUST</bcp14> select one of the proposed transforms of this type and return it back
+        in the response as along with the other transform types, as specified in Section 2.7 of <xref target="RFC7296" />.
+        </t>
+
+        <t> The negotiated key exchange method does not used in the key derivation for the initial Child SA.
+        Instead, peers keep this information for later use. When one of the peers wishes to rekey the initial Child Sa,
+        it <bcp14>SHOULD</bcp14> propose the negotiated key exchange method in the SA payload in the CREATE_CHILD_SA exchange.
+        In this case the proposing host can be sure that the peer supports this key exchange method. 
+        Note, that other key exchange methods <bcp14>MAY</bcp14> additionally be proposed in this case,
+        for example when the Child SA PFS policy has beed updated.
+        </t>
+    </section>
+
+<!--
     <section title="Usage of the CHILD_PFS_INFO Notify" anchor="usage">
     <t>The CHILD_PFS_INFO Notify payload is sent during the (last) IKE_AUTH exchange.</t>
 
@@ -161,27 +178,28 @@
        ensures that incomptabile peers will immediately fail the initial Child SA and won't only later on during
        rekey fail the Child SA.</t>
       </section>
+-->
 
     <section title="Operational Considerations" anchor="ops_consider">
       <t>
-       This document is a result of Operational Considers that have shown peers can run
+       This document is a result of cases from real life that have shown peers can run
        into broken IPsec connections at rekey time. These are not obvious to the administrators
        as these usually do not sit around for a few hours to wait and see if the rekey process
-       worked successfully. The CHILD_PFS_INFO results in immediate negotiation failure that
+       worked successfully. The method defined in this document results in immediate negotiation failure that
        can be repaired before taking the IPsec connection into production.
       </t>
       <t>
-       During rekey, the cryptographic strength of a rekeyed Child SA SHOULD remain
-       at least as strong as the Child SA being rekeyed. In practise this means the
+       During rekey, the cryptographic strength of a rekeyed Child SA <bcp14>SHOULD</bcp14> remain
+       at least as strong as the Child SA being rekeyed. In practise this often means the
        negotiated algorithms remain the same. But some deployments use stronger
        settings for the IKE SA compared to its Child SAs, which means technically
-       the initial Child SA uses a stronger KE method than for rekeys. The CHILD_PFS_INFO
-       payload exposes such settings to the peers during the Initial Exchanges, and peers
-       can at that time accept or reject the child proposal. Once the Initial Child SA
-       containing CHILD_PFS_INFO is accepted, rekey proposals are guaranteed to be acceptable
-       to both parties. For example, an IKE SA could be using KE method 15 (3072-bit MODP)
+       the initial Child SA uses a stronger KE method than for rekeys. The negotiation
+       of KE method during initial Child SA establishing exposes such settings to the peers at the time IKE SA is being created, 
+       and peers can at that time accept or reject the child proposal. Once the KE method 
+       is negotiated during initial Child SA establishing, rekey proposals using this method are guaranteed to be acceptable
+       to both parties. <!-- For example, an IKE SA could be using KE method 15 (3072-bit MODP)
        and specify in the CHILD_PFS_INFO that it accepts KE method 14 (2048-bit MODP) for
-       this Child SA rekey.</t>
+       this Child SA rekey.--></t>
 
       <t>
       Deployments with a large number of Child SAs often use no PFS for their Child SAs. It
@@ -199,10 +217,11 @@
        increased awareness of peer capabilities with respect to KE methods.
       </t>
     </section>
+
     <section title="Implementation Status" anchor="impl_status">
       <t>
       [Note to RFC Editor: Please remove this section and the reference to
-      <xref target="RFC6982"/> before publication.]
+      <!-- <xref target="RFC6982"/> --> <xref target="RFC7942"/> before publication.]
      </t>
       <t>
       This section records the status of known implementations of the
@@ -231,6 +250,8 @@
       top of this section, advising the Editor to remove the entire
       section before publication, as well as the reference to <xref target="RFC7942"/>.
      </t>
+
+<!--
       <section anchor="section.impl-status.libreswan" title="Libreswan">
         <t>
           <list style="hanging">
@@ -246,16 +267,18 @@
           </list>
         </t>
       </section>
+-->
+
      </section>
     <section anchor="IANA" title="IANA Considerations">
       <t>
-        This document defines one new IKEv2 Notify Message Type payload for the IANA "IKEv2 Notify Message Types - Status Types" registry.
+        This document defines one new IKEv2 Notify Message Type payload for the IANA "IKEv2 Notify Message Status Types" registry.
         </t>
-      <figure align="center" anchor="iana_requests_i">
+      <figure align="center">
         <artwork align="left"><![CDATA[
-      Value   Notify Type Messages - Status Types    Reference
+      Value   Notify Message Status Type        Reference
       -----   ------------------------------    ---------------
-      [TBD1]   CHILD_PFS_INFO                    [this document]
+      TBA     CHILD_PFS_INFO                    [this document]
             ]]></artwork>
       </figure>
     </section>
@@ -267,7 +290,8 @@
      &RFC8174;
     </references>
     <references title="Informative References">
-     &RFC6982;
+<!--     &RFC6982; -->
+     &RFC6023;
      &RFC7942;
     </references>
   </back>
