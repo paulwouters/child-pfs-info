@@ -143,11 +143,11 @@
         negotiate support for this extension in the IKE_SA_INIT exchange, so that the extension is not used.
         </t>
 
-        <t> The negotiated key exchange method does not used in the key derivation for the initial Child SA.
-        Instead, peers keep this information for later use. When one of the peers wishes to rekey the initial Child Sa,
-        it <bcp14>SHOULD</bcp14> propose the negotiated key exchange method in the SA payload in the CREATE_CHILD_SA exchange.
-        In this case the proposing host can be sure that the peer supports this key exchange method. 
-        Note, that other key exchange methods <bcp14>MAY</bcp14> additionally be proposed in this case,
+        <t> The negotiated key exchange method along with additional key exchange methods (if any) are not used in the key derivation for the 
+        initial Child SA. Instead, peers keep this information for later use. When one of the peers wishes to rekey the initial Child Sa,
+        it <bcp14>SHOULD</bcp14> propose the negotiated KE transform and AKE* transforms (if they were negotiated)
+        in the SA payload in the CREATE_CHILD_SA exchange. In this case the proposing host can be sure that the peer supports this key exchange method
+        and these additional key exchange methods (if any). Note, that other KE (and AKE*) transforms  <bcp14>MAY</bcp14> additionally be proposed in this case,
         for example when the Child SA PFS policy has been updated.
         </t>
     </section>
