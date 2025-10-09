@@ -9,6 +9,7 @@
 <!ENTITY RFC8174 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8174.xml">
 <!ENTITY RFC7942 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.7942.xml">
 <!ENTITY RFC6023 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.6023.xml">
+<!ENTITY RFC9370 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.9370.xml">
 ]>
 <?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
 <?rfc strict="yes" ?>
@@ -61,7 +62,7 @@
       <t>The Initial exchanges establish both an IKE SA and a Child SA using the
        Key Exchange method negotiated for the IKE SA. Thus, after the Initial
        exchanges, the peers are not aware of each other PFS requirements for the
-       existing Child SA. It is common practise to either not perform PFS for Child SAs,
+       existing Child SA. It is common practice to either not perform PFS for Child SAs,
        or to only perform the same KE methods for both the IKE SA and all Child SAs.
        The situation is even more complex when Post-Quantum Key Exchange methods
        are used that might contain multiple KE payloads, which might not all be
@@ -101,7 +102,7 @@
     <section title="Protocol Overview" anchor="overview">
         <t> In IKEv2, when an IKE SA is created, an initial Child SA is also created as described in <xref target="RFC7296" />.
         Negotiation of the Child Sa parameters for the initial Child SA is different than for any other Child Sa.
-        In particular, since the IKE_AUTH exchange does not contain Key Exchange (KE) payloads, key exchnage 
+        In particular, since the IKE_AUTH exchange does not contain Key Exchange (KE) payloads, key exchange 
         method for initial Child SA cannot be negotiated. Section 1.2 of <xref target="RFC7296" /> states 
         that the SA payloads in the IKE_AUTH exchange cannot contain Transform Type 4 (Key Exchange Method) 
         with any value other than NONE (and that <xref target="RFC7296" /> recommends implementations to omit 
@@ -109,9 +110,10 @@
         of Child SA parameters between the IKE_AUTH (for initial Child SA) and the CREATE_CHILD_SA (for all other Child SA) exchanges.
         </t>
 
-        <t> In order to allow peers to negotiate the Key Exchnage method for use in successive rekey operations
-        during initial IKE exchanges, this document allows supporting peers to negotiate key exchnage 
-        method in the IKE_AUTH exchange as they would do it in the CREATE_CHILD_SA exchange. Note, that 
+        <t> In order to allow peers to negotiate the Key Exchange method for use in successive rekey operations
+        during initial IKE exchanges, this document allows supporting peers to negotiate key exchange 
+        method (or methods in case of multiple key exchanges <xref target="RFC9370" />) in the IKE_AUTH exchange 
+        as they would do it in the CREATE_CHILD_SA exchange. Note, that 
         this negotiation does not affect the way session keys are derived for an initial Child SA and is only
         purposed for agreeing on the mutually acceptable key exchange method for successive rekey of initial Child SA. 
         </t>
@@ -119,25 +121,34 @@
 
     <section title="Protocol Details" anchor="protocol">
         <t> To be able to use this extensions peers first need to negotiate support for it.
-        This is done in the IKE_SA_INIT exchange by exchanging new notification CHILD_PFS_INFO (&lt;TBA&gt;).
+        This is done in the IKE_SA_INIT exchange by exchanging new notification CHILD_SA_PFS_INFO_SUPPORTED (&lt;TBA&gt;).
         The Protocol ID and SPI Size fields of this notification are set to 0, the Notification Data is empty.
         The initiator wishing to use this extension includes this notification in the IKE_SA_INIT request.
-        If the responder receives the CHILD_PFS_INFO and supports this extension, it sends this notification back in the response.
+        If the responder receives the CHILD_SA_PFS_INFO_SUPPORTED and supports this extension, it sends this notification back in the response.
         </t>
 
-        <t> If peers successfully exchanged the CHILD_PFS_INFO notification in the IKE_SA_INIT exchange
+        <t> If peers successfully exchanged the CHILD_SA_PFS_INFO_SUPPORTED notification in the IKE_SA_INIT exchange
         then the initiator <bcp14>MAY</bcp14> (but not obliged) to include the Key Exchange Method (KE) transform(s)
-        that it is wishing to use for subsequent rekey operations in the SA payload in the IKE_AUTH exchnage.
-        If this case the responder <bcp14>MUST</bcp14> select one of the proposed transforms of this type and return it back
-        in the response as along with the other transform types, as specified in Section 2.7 of <xref target="RFC7296" />.
+        that it is wishing to use for subsequent rekey operations according to its Child SA PFS policy in the SA payload in the IKE_AUTH exchange.
+        Additional Key Exchange Method (AKE*) transforms are also included if the initiator proposes multiple key exchanges <xref target="RFC9370" />.
+        The responder selects one of the proposed KE (and each of AKE*, if present) transform according to its Child SA PFS policy 
+        and returns back its selection in the response along with transforms of other types, as specified in Section 2.7 of <xref target="RFC7296" />.
+        If the responder fails to find mutually acceptable set of transforms then it returns the NO_PROPOSAL_CHOSEN notification 
+        and the initial Child SA is not created, as defined in Section 2.7 of <xref target="RFC7296" />. 
         </t>
 
-        <t> The negotiated key exchange method does not used in the key derivation for the initial Child SA.
-        Instead, peers keep this information for later use. When one of the peers wishes to rekey the initial Child Sa,
-        it <bcp14>SHOULD</bcp14> propose the negotiated key exchange method in the SA payload in the CREATE_CHILD_SA exchange.
-        In this case the proposing host can be sure that the peer supports this key exchange method. 
-        Note, that other key exchange methods <bcp14>MAY</bcp14> additionally be proposed in this case,
-        for example when the Child SA PFS policy has beed updated.
+        <t> Note that this extension may cause initial Child SA to fail even when it would be created if peers didn't use this extension 
+        (in situation when no peer's Child SA PFS policies have no mutually acceptable key exchange methods). For this reason, if any of the peers 
+        does not intends to rekey the initial Child SA (e.g., it plans to create a short-lived Child SA), then this peer <bcp14>SHOULD NOT</bcp14>
+        negotiate support for this extension in the IKE_SA_INIT exchange, so that the extension is not used.
+        </t>
+
+        <t> The negotiated key exchange method along with additional key exchange methods (if any) are not used in the key derivation for the 
+        initial Child SA. Instead, peers keep this information for later use. When one of the peers wishes to rekey the initial Child Sa,
+        it <bcp14>SHOULD</bcp14> propose the negotiated KE transform and AKE* transforms (if they were negotiated)
+        in the SA payload in the CREATE_CHILD_SA exchange. In this case the proposing host can be sure that the peer supports this key exchange method
+        and these additional key exchange methods (if any). Note, that other KE (and AKE*) transforms  <bcp14>MAY</bcp14> additionally be proposed in this case,
+        for example when the Child SA PFS policy has been updated.
         </t>
     </section>
 
@@ -190,7 +201,7 @@
       </t>
       <t>
        During rekey, the cryptographic strength of a rekeyed Child SA <bcp14>SHOULD</bcp14> remain
-       at least as strong as the Child SA being rekeyed. In practise this often means the
+       at least as strong as the Child SA being rekeyed. In practice this often means the
        negotiated algorithms remain the same. But some deployments use stronger
        settings for the IKE SA compared to its Child SAs, which means technically
        the initial Child SA uses a stronger KE method than for rekeys. The negotiation
@@ -278,7 +289,7 @@
         <artwork align="left"><![CDATA[
       Value   Notify Message Status Type        Reference
       -----   ------------------------------    ---------------
-      TBA     CHILD_PFS_INFO                    [this document]
+      TBA     CHILD_SA_PFS_INFO_SUPPORTED       [this document]
             ]]></artwork>
       </figure>
     </section>
@@ -292,6 +303,7 @@
     <references title="Informative References">
 <!--     &RFC6982; -->
      &RFC6023;
+     &RFC9370;
      &RFC7942;
     </references>
   </back>
