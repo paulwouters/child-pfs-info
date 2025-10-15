@@ -59,7 +59,7 @@
        payload and list of acceptable Key Exchange methods. During Child SA
        rekeys, KE payloads of acceptable Key Exchange methods are exchanged to
        create PFS.</t>
-      <t>The Initial exchanges establish both an IKE SA and a Child SA using the
+      <t>The Initial Exchanges establish both an IKE SA and a Child SA using the
        Key Exchange method negotiated for the IKE SA. Thus, after the Initial
        exchanges, the peers are not aware of each other PFS requirements for the
        existing Child SA. It is common practice to either not perform PFS for Child SAs,
@@ -69,7 +69,7 @@
        desired for rekeying the Initial Child SA.  It is currently not possible
        to know the desired PFS configuration for rekey of the initial Child SA.
        The peers find out about this problem only at the first Child SA rekey,
-       which can be substantially (several hours) later than initial Child Sa is created. </t>
+       which can be substantially (several hours) later than initial Child SA is created. </t>
       <t>
        This document defines a method for peers to negotiate a Key Exchange method
        that is compliant with peers' Child SA PFS policy at the time 
@@ -101,7 +101,7 @@
 
     <section title="Protocol Overview" anchor="overview">
         <t> In IKEv2, when an IKE SA is created, an initial Child SA is also created as described in <xref target="RFC7296" />.
-        Negotiation of the Child Sa parameters for the initial Child SA is different than for any other Child Sa.
+        Negotiation of the Child SA parameters for the initial Child SA is different than for any other Child SA.
         In particular, since the IKE_AUTH exchange does not contain Key Exchange (KE) payloads, key exchange 
         method for initial Child SA cannot be negotiated. Section 1.2 of <xref target="RFC7296" /> states 
         that the SA payloads in the IKE_AUTH exchange cannot contain Transform Type 4 (Key Exchange Method) 
@@ -128,7 +128,7 @@
         </t>
 
         <t> If peers successfully exchanged the CHILD_SA_PFS_INFO_SUPPORTED notification in the IKE_SA_INIT exchange
-        then the initiator <bcp14>MAY</bcp14> (but not obliged) to include the Key Exchange Method (KE) transform(s)
+        then the initiator <bcp14>MAY</bcp14> include the Key Exchange Method (KE) transform(s)
         that it is wishing to use for subsequent rekey operations according to its Child SA PFS policy in the SA payload in the IKE_AUTH exchange.
         Additional Key Exchange Method (AKE*) transforms are also included if the initiator proposes multiple key exchanges <xref target="RFC9370" />.
         The responder selects one of the proposed KE (and each of AKE*, if present) transform according to its Child SA PFS policy 
@@ -144,7 +144,7 @@
         </t>
 
         <t> The negotiated key exchange method along with additional key exchange methods (if any) are not used in the key derivation for the 
-        initial Child SA. Instead, peers keep this information for later use. When one of the peers wishes to rekey the initial Child Sa,
+        initial Child SA. Instead, peers keep this information for later use. When one of the peers wishes to rekey the initial Child SA,
         it <bcp14>SHOULD</bcp14> propose the negotiated KE transform and AKE* transforms (if they were negotiated)
         in the SA payload in the CREATE_CHILD_SA exchange. In this case the proposing host can be sure that the peer supports this key exchange method
         and these additional key exchange methods (if any). Note, that other KE (and AKE*) transforms  <bcp14>MAY</bcp14> additionally be proposed in this case,
@@ -193,11 +193,11 @@
 
     <section title="Operational Considerations" anchor="ops_consider">
       <t>
-       This document is a result of cases from real life that have shown peers can run
+       This document is a result of cases from operational experience that have shown peers can run
        into broken IPsec connections at rekey time. These are not obvious to the administrators
        as these usually do not sit around for a few hours to wait and see if the rekey process
-       worked successfully. The method defined in this document results in immediate negotiation failure that
-       can be repaired before taking the IPsec connection into production.
+       worked successfully. The method defined in this document results in immediate negotiation
+       failure that can be repaired before taking the IPsec connection into production.
       </t>
       <t>
        During rekey, the cryptographic strength of a rekeyed Child SA <bcp14>SHOULD</bcp14> remain
@@ -218,7 +218,7 @@
       immediately rekey the IKE SA. This method can also be used if the peer's Child SA KE
       methods are unacceptable. If both peers accept the KE method of 0 (NONE), it can decide
       to rekey the Child SA without PFS and immediately rekey the IKE SA using its accepted KE
-      method.
+      method to gain PFS on the Child SA.
       </t>
     </section>
 
