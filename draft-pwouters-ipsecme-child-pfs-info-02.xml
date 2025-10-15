@@ -19,7 +19,7 @@
 <?rfc sortrefs="yes" ?>
 <?rfc compact="yes" ?>
 <?rfc subcompact="no" ?>
-<rfc ipr="trust200902" updates="" obsoletes="" category="std" docName="draft-pwouters-ipsecme-child-pfs-info-03">
+<rfc ipr="trust200902" updates="" obsoletes="" category="std" docName="draft-pwouters-ipsecme-child-pfs-info-02">
   <front>
     <title abbrev="Child SA PFS Policy Info">IKEv2 Support for Child SA PFS Policy Information</title>
     <author initials="P." surname="Wouters" fullname="Paul Wouters">
